@@ -1,9 +1,52 @@
 # Regression and model validation 
 In this part we looked at linear regression to analyse data and how to fit a multiple linear regression model. We also touched upon how to check the assumptions on which the model is based.
-Further chapters have been written assuming that the reader has an introductory course level understanding of writing and reading R code as well as statistical methods.
+
+Further sections have been written assuming that the reader has an introductory course level understanding of writing and reading R code as well as statistical methods.
 
 ```{r}
 date()
 ```
+In the following analysis I will analyse a dataset originating from a survey *Approaches to Learning* conducted in an introductory statistics course in Finland. More information and meta data can be found here: https://www.mv.helsinki.fi/home/kvehkala/JYTmooc/JYTOPKYS3-meta.txt
 
-Here we go again...
+Data was set up by:
+
+1. Calculating values for Deep approach (deep), surface approach (surf) and strategic approach (stra) and scaling them back to the original point scale (1-5).
+2. Excluding observations where the exam points variable is zero.
+
+Original data and script for data set up can be found: IODS-project/data/create_learning2014.R script.
+Whilst information about how the values were calculated can be found here: https://www.mv.helsinki.fi/home/kvehkala/JYTmooc/JYTOPKYS2-meta.txt
+
+## Overview
+
+```{r}
+# Read in the prepared data
+data <- read.delim("C:/Users/Localadmin_neimane/Desktop/Data Science/OpenDataScience/IODS-project/data/learning2014.txt")
+
+#Set gender as a factor
+data$gender <- as.factor(data$gender) 
+
+#Show summary of the data set
+summary(data) 
+```
+The resulting data set consists of 166 observations of 7 variables: gender (110 females, 56 students), age (from 17 till 55 years old, mean age is 26 years), attitude towards statistics, deep approach result (**deep**), surface approach result (**surf**), strategic approach result (**stra**) and exam points.
+```{r, fig.width=10,fig.height=4}
+#Call for the needed packages
+library(ggplot2)
+library(GGally)
+#Visually explore the dataset
+#Create a more advanced plot matrix with ggpairs()
+p <- ggpairs(data, mapping = aes(col=gender, alpha=0.3), lower = list(combo = wrap("facethist", bins = 10)))
+p
+
+#checking normal distribution
+shapiro.test(data$Attitude)
+shapiro.test(data$deep)
+shapiro.test(data$stra)
+shapiro.test(data$surf)
+shapiro.test(data$Points)
+```
+
+On the left side you can see the data distribution histograms - Majority of the participants were women. Most were in the age between 20 to 30 years old. Variables attitude, stra and surf are in normal distribution according to the Shapiro normality test and histograms. 
+We can observe the correlation between variables **Attitude** and the exam result **Points** (*R$^{2}$=0.44*). Interestingly highest correlation (*R$^{2}$=-0.62*) was observed between variables **deep** and **surf**, but only gender - men subset of the data. Similarly the same, but a weaker correlation (*R$^{2}$=-0.37*) was observed with the variable **surf** and **Attitude**. 
+
+## Regression model
