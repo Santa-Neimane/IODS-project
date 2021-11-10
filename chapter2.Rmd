@@ -29,7 +29,7 @@ data$gender <- as.factor(data$gender)
 summary(data) 
 ```
 The resulting data set consists of 166 observations of 7 variables: gender (110 females, 56 students), age (from 17 till 55 years old, mean age is 26 years), attitude towards statistics, deep approach result (**deep**), surface approach result (**surf**), strategic approach result (**stra**) and exam points.
-```{r, fig.width=10,fig.height=4}
+```{r, fig.width=10,fig.height=5}
 #Call for the needed packages
 library(ggplot2)
 library(GGally)
@@ -46,7 +46,83 @@ shapiro.test(data$surf)
 shapiro.test(data$Points)
 ```
 
-On the left side you can see the data distribution histograms - Majority of the participants were women. Most were in the age between 20 to 30 years old. Variables attitude, stra and surf are in normal distribution according to the Shapiro normality test and histograms. 
+On the left side you can see the data distribution histograms - majority of the participants were women. Most were in the age between 20 to 30 years old. Variables attitude, stra and surf are in normal distribution according to the Shapiro normality test and histograms. 
 We can observe the correlation between variables **Attitude** and the exam result **Points** (*R$^{2}$=0.44*). Interestingly highest correlation (*R$^{2}$=-0.62*) was observed between variables **deep** and **surf**, but only gender - men subset of the data. Similarly the same, but a weaker correlation (*R$^{2}$=-0.37*) was observed with the variable **surf** and **Attitude**. 
+Whilst some of the boxplots in the upper part of the graph show outliers in the point graphs, for the first analysis we will not remove them since they are not very extreme values. This will be rechecked with model diagnostics.  
 
 ## Regression model
+The task was to fit a regression model where exam points is the target dependent variable and there are 3 explanatory variables. 
+
+```{r}
+model1 <- lm(Points ~ gender + Age +Attitude + deep + stra + surf, data = data)
+summary(model1)
+```
+Gender is the least significant variable to explain exam point result so we make a new model without including it. 
+
+```{r}
+model2 <- lm(Points ~ Age +Attitude + deep + stra + surf, data = data)
+summary(model2)
+```
+
+Variables surf and deep are not significant so they are removed one by one. 
+```{r}
+model3 <- lm(Points ~ Age + Attitude + deep + stra, data = data)
+summary(model3)
+```
+And remove variable deep from the model
+```{r}
+model4 <- lm(Points ~ Age + Attitude + stra, data = data)
+summary(model4)
+```
+The Residuals section of the results shows how the actual results differ from the predicted values from the model with specific value region details (minimal value, first quater and so on). Median difference in between the result and model values is 0.33 points. 
+The Intercept shows the mean for the dependent variable (in this model 10.9) when all of the explanatory variables would be 0.
+The regression equation that explains obtained points in the exam is: Points = 10.9 - (0.09xAge) + (0.35xAttitude) + stra
+The three asterisks marks highlights the significance of Attitude. While the dot shows that Age and stra variable p-values are near chosen significance level (0.05).
+Residual standard error and F statistics shows how well the model can predict data and the degrees of freedom show the amount of data to estimate the parameters (165 datapoints - 3 variables we are looking at).
+The multiple R squared of the model shows the proportion of the variance in the dependent variable of a regression model that can be explained by the explanatory variables. The value ranges from 0 - 1. In this model the three explanatory variables together account for 22% of the variation in persons obtained exam result points. The result also implies that **Attitude** is  associated more strongly with the obtained points in the exam than age and stra (strategic approach). 
+
+As Age explanatory variable in the model does not have a statistically significant relationship with the obtained exam points, the variable will be removed from the model. 
+
+```{r}
+model5 <- lm(Points ~ Attitude + stra, data = data)
+summary(model5)
+```
+Stra variable still has not reached significance threshold. 
+```{r}
+model6 <- lm(Points ~ Attitude, data = data)
+summary(model6)
+```
+```{r}
+#Determine the AIC value for the models to chose the best fitting one
+AIC(model1)
+AIC(model2)
+AIC(model3)
+AIC(model4)
+AIC(model5)
+AIC(model6)
+```
+The lowest AIC score is for model4 where all 3 explanatory variables were included (age + Attitude + stra). 
+
+## Model diagnostics
+### Variance Inflation Factor
+```{r}
+#Load needed package 
+library(car)
+#Calculate Variance Inflation Factor of the chosen model
+vif(model4)
+```
+Multiple regression assumes that the explanatory variables are independent and do not highly correlate with each other.VIF values are about 1 so we do not need to worry about multicollinearity in the regression model. 
+
+
+### Diagnostic plots and assumptions. 
+To presume that the built model is valid multiple regression assumptions have to be met. Like the relationship between the dependent and explanatory variables ought to be linear, the residual errors need to be normally distributed and they have a constant variance. This assumptions can be checked with diagnostic plots and tests.
+
+```{r}
+#Plot diagnostic plots (Residuals vs Fitted values, Normal QQ-plot and Residuals vs Leverage) for the chosen model4.
+par(mfrow = c(2,2))
+plot(model4, which = c(1,2,5))
+```
+
+
+With the First graph *Residuals vs Fitted* we can check the linear relationship assumption. As we can see a horizontal line with no pattern and the red line is around 0, we can assume a linear relationship. With the second graph *Normal Q & Q* we can check the residual normality distribution assumption. Since there are no large deviations from the line we can move on. The third graph *Residuals vs Leverage* shows if there are any influential values (as outlier or a high leverage point). Whilst there point 2 and 4 have a rather large leverage value, they do not go over the Cook's distance lines. Cook’s distance line is not shown on the plot because all points are well inside of the Cook’s distance lines. Also, the spread of standardized residuals does not seem to change with increased leverage. Thus we may interpret the developed model as valid, but as we remember it did not have a high explanatory power. So for further surveys other explanatory variables ought to be considered. 
+
