@@ -76,7 +76,9 @@ summary(model4)
 ```
 The Residuals section of the results shows how the actual results differ from the predicted values from the model with specific value region details (minimal value, first quater and so on). Median difference in between the result and model values is 0.33 points. 
 The Intercept shows the mean for the dependent variable (in this model 10.9) when all of the explanatory variables would be 0.
-The regression equation that explains obtained points in the exam is: Points = 10.9 - (0.09xAge) + (0.35xAttitude) + stra
+The regression equation that explains obtained points in the exam is: 
+Points = 10.9 - (0.09xAge) + (0.35xAttitude) + stra
+
 The three asterisks marks highlights the significance of Attitude. While the dot shows that Age and stra variable p-values are near chosen significance level (0.05).
 Residual standard error and F statistics shows how well the model can predict data and the degrees of freedom show the amount of data to estimate the parameters (165 datapoints - 3 variables we are looking at).
 The multiple R squared of the model shows the proportion of the variance in the dependent variable of a regression model that can be explained by the explanatory variables. The value ranges from 0 - 1. In this model the three explanatory variables together account for 22% of the variation in persons obtained exam result points. The result also implies that **Attitude** is  associated more strongly with the obtained points in the exam than age and stra (strategic approach). 

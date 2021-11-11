@@ -192,7 +192,7 @@ pre code {
 <pre class="r"><code># This is a so-called &quot;R chunk&quot; where you can write R code.
 
 date()</code></pre>
-<pre><code>## [1] &quot;Wed Nov 10 22:46:32 2021&quot;</code></pre>
+<pre><code>## [1] &quot;Thu Nov 11 09:57:55 2021&quot;</code></pre>
 <hr />
 </div>
 <div id="regression-and-model-validation" class="section level1">
@@ -200,7 +200,7 @@ date()</code></pre>
 <p>In this part we looked at linear regression to analyse data and how to fit a multiple linear regression model. We also touched upon how to check the assumptions on which the model is based.</p>
 <p>Further sections have been written assuming that the reader has an introductory course level understanding of writing and reading R code as well as statistical methods.</p>
 <pre class="r"><code>date()</code></pre>
-<pre><code>## [1] &quot;Wed Nov 10 22:46:32 2021&quot;</code></pre>
+<pre><code>## [1] &quot;Thu Nov 11 09:57:55 2021&quot;</code></pre>
 <p>In the following analysis I will analyse a dataset originating from a survey <em>Approaches to Learning</em> conducted in an introductory statistics course in Finland. More information and meta data can be found here: <a href="https://www.mv.helsinki.fi/home/kvehkala/JYTmooc/JYTOPKYS3-meta.txt" class="uri">https://www.mv.helsinki.fi/home/kvehkala/JYTmooc/JYTOPKYS3-meta.txt</a></p>
 <p>Data was set up by:</p>
 <ol style="list-style-type: decimal">
@@ -378,7 +378,8 @@ summary(model4)</code></pre>
 ## Residual standard error: 5.26 on 162 degrees of freedom
 ## Multiple R-squared:  0.2182, Adjusted R-squared:  0.2037 
 ## F-statistic: 15.07 on 3 and 162 DF,  p-value: 1.07e-08</code></pre>
-<p>The Residuals section of the results shows how the actual results differ from the predicted values from the model with specific value region details (minimal value, first quater and so on). Median difference in between the result and model values is 0.33 points. The Intercept shows the mean for the dependent variable (in this model 10.9) when all of the explanatory variables would be 0. The regression equation that explains obtained points in the exam is: Points = 10.9 - (0.09xAge) + (0.35xAttitude) + stra The three asterisks marks highlights the significance of Attitude. While the dot shows that Age and stra variable p-values are near chosen significance level (0.05). Residual standard error and F statistics shows how well the model can predict data and the degrees of freedom show the amount of data to estimate the parameters (165 datapoints - 3 variables we are looking at). The multiple R squared of the model shows the proportion of the variance in the dependent variable of a regression model that can be explained by the explanatory variables. The value ranges from 0 - 1. In this model the three explanatory variables together account for 22% of the variation in persons obtained exam result points. The result also implies that <strong>Attitude</strong> is associated more strongly with the obtained points in the exam than age and stra (strategic approach).</p>
+<p>The Residuals section of the results shows how the actual results differ from the predicted values from the model with specific value region details (minimal value, first quater and so on). Median difference in between the result and model values is 0.33 points. The Intercept shows the mean for the dependent variable (in this model 10.9) when all of the explanatory variables would be 0. The regression equation that explains obtained points in the exam is: Points = 10.9 - (0.09xAge) + (0.35xAttitude) + stra</p>
+<p>The three asterisks marks highlights the significance of Attitude. While the dot shows that Age and stra variable p-values are near chosen significance level (0.05). Residual standard error and F statistics shows how well the model can predict data and the degrees of freedom show the amount of data to estimate the parameters (165 datapoints - 3 variables we are looking at). The multiple R squared of the model shows the proportion of the variance in the dependent variable of a regression model that can be explained by the explanatory variables. The value ranges from 0 - 1. In this model the three explanatory variables together account for 22% of the variation in persons obtained exam result points. The result also implies that <strong>Attitude</strong> is associated more strongly with the obtained points in the exam than age and stra (strategic approach).</p>
 <p>As Age explanatory variable in the model does not have a statistically significant relationship with the obtained exam points, the variable will be removed from the model.</p>
 <pre class="r"><code>model5 &lt;- lm(Points ~ Attitude + stra, data = data)
 summary(model5)</code></pre>
