@@ -76,7 +76,9 @@ summary(model4)
 ```
 The Residuals section of the results shows how the actual results differ from the predicted values from the model with specific value region details (minimal value, first quater and so on). Median difference in between the result and model values is 0.33 points. 
 The Intercept shows the mean for the dependent variable (in this model 10.9) when all of the explanatory variables would be 0.
-The regression equation that explains obtained points in the exam is: Points = 10.9 - (0.09xAge) + (0.35xAttitude) + stra
+The regression equation that explains obtained points in the exam is: 
+Points = 10.9 - (0.09xAge) + (0.35xAttitude) + stra
+
 The three asterisks marks highlights the significance of Attitude. While the dot shows that Age and stra variable p-values are near chosen significance level (0.05).
 Residual standard error and F statistics shows how well the model can predict data and the degrees of freedom show the amount of data to estimate the parameters (165 datapoints - 3 variables we are looking at).
 The multiple R squared of the model shows the proportion of the variance in the dependent variable of a regression model that can be explained by the explanatory variables. The value ranges from 0 - 1. In this model the three explanatory variables together account for 22% of the variation in persons obtained exam result points. The result also implies that **Attitude** is  associated more strongly with the obtained points in the exam than age and stra (strategic approach). 
@@ -115,7 +117,7 @@ Multiple regression assumes that the explanatory variables are independent and d
 
 
 ### Diagnostic plots and assumptions. 
-To presume that the built model is valid multiple regression assumptions have to be met. Like the relationship between the dependent and explanatory variables ought to be linear, the residual errors need to be normally distributed and they have a constant variance. This assumptions can be checked with diagnostic plots and tests.
+To presume that the built model is valid multiple regression assumptions have to be met. Like the relationship between the dependent and explanatory variables ought to be linear, the residual errors need to be normally distributed and they have a constant variance. These assumptions can be checked with diagnostic plots and tests.
 
 ```{r}
 #Plot diagnostic plots (Residuals vs Fitted values, Normal QQ-plot and Residuals vs Leverage) for the chosen model4.
@@ -124,5 +126,5 @@ plot(model4, which = c(1,2,5))
 ```
 
 
-With the First graph *Residuals vs Fitted* we can check the linear relationship assumption. As we can see a horizontal line with no pattern and the red line is around 0, we can assume a linear relationship. With the second graph *Normal Q & Q* we can check the residual normality distribution assumption. Since there are no large deviations from the line we can move on. The third graph *Residuals vs Leverage* shows if there are any influential values (as outlier or a high leverage point). Whilst there point 2 and 4 have a rather large leverage value, they do not go over the Cook's distance lines. Cook’s distance line is not shown on the plot because all points are well inside of the Cook’s distance lines. Also, the spread of standardized residuals does not seem to change with increased leverage. Thus we may interpret the developed model as valid, but as we remember it did not have a high explanatory power. So for further surveys other explanatory variables ought to be considered. 
+With the First graph *Residuals vs Fitted* we can check the linear relationship assumption. As we can see a horizontal line with no pattern and the red line is around 0, we can assume a linear relationship. With the second graph *Normal Q&Q* we can check the residual normality distribution assumption. Since there are no large deviations from the line we can move on. The third graph *Residuals vs Leverage* shows if there are any influential values (as outlier or a high leverage point). Whilst there point 2 and 4 have a rather large leverage value, they do not go over the Cook's distance lines. Cook’s distance line is not shown on the plot because all points are well inside of the Cook’s distance lines. Also, the spread of standardized residuals does not seem to change with increased leverage. Thus we may interpret the developed model as valid, but as we remember it did not have a high explanatory power. So for further surveys other explanatory variables ought to be considered. 
 
