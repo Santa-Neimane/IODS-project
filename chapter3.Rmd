@@ -1,0 +1,29 @@
+# Logistic regression
+In this part we looked at logistic regression to analyse student alcohol consumption data. 
+
+```{r}
+date()
+```
+In the following analysis I will analyse a data originating from a data set *Student achievement in secondary education of two Portuguese schools*. More information and data can be found here: https://archive.ics.uci.edu/ml/datasets/Student+Performance
+
+Original data and script for data set up can be found: IODS-project/data/create_alc.R script.
+
+Data was set up by:
+
+1. Joining the Mathematics and Portuguese language grade data files
+2. Calculating average alcohol use and creating new logical variable high_use which shows alc_use' is greater than 2.
+
+
+# Overview
+
+
+```{r echo=TRUE}
+#Read in the prepared data
+data <- read.csv("C:/Users/Localadmin_neimane/Desktop/Data Science/OpenDataScience/IODS-project/data/JoinedMathPorData.txt", sep="")
+```
+```{r}
+#Show names of the variables
+names(data)
+```
+Data set includes information like, the sex and age, family size, parent education level, travel time to school, internet access and much more. There are in total 370 observations with 41 column. Variable ending .math or .por indicates the variable being source from Mathematics (.math) or Portuguese language (.por).
+
