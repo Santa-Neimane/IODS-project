@@ -51,7 +51,7 @@ We can observe the correlation between variables **Attitude** and the exam resul
 Whilst some of the boxplots in the upper part of the graph show outliers in the point graphs, for the first analysis we will not remove them since they are not very extreme values. This will be rechecked with model diagnostics.  
 
 ## Regression model
-The task was to fit a regression model where exam points is the target dependent variable and there are 3 explanatory variables. The visual analysis of the highest correlation and linear regression show that model 3 is the best, which includes attitude, stra and age.
+The task was to fit a regression model where exam points is the target dependent variable and there are 3 explanatory variables. The visual analysis of the highest correlation and linear regression show that model 4 is the best, which includes attitude, stra and age.
 The following steps to check this were: 
 
 1. Build a model with all variables
