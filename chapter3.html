@@ -171,7 +171,7 @@ pre code {
 <h1>Logistic regression</h1>
 <p>In this part we looked at logistic regression to analyse student alcohol consumption data.</p>
 <pre class="r"><code>date()</code></pre>
-<pre><code>## [1] &quot;Mon Nov 15 18:49:57 2021&quot;</code></pre>
+<pre><code>## [1] &quot;Mon Nov 15 20:30:57 2021&quot;</code></pre>
 <p>In the following analysis I will analyse a data originating from a data set <em>Student achievement in secondary education of two Portuguese schools</em>. More information and data can be found here: <a href="https://archive.ics.uci.edu/ml/datasets/Student+Performance" class="uri">https://archive.ics.uci.edu/ml/datasets/Student+Performance</a></p>
 <p>Original data and script for data set up can be found: IODS-project/data/create_alc.R script.</p>
 <p>Data was set up by:</p>
@@ -179,12 +179,12 @@ pre code {
 <li>Joining the Mathematics and Portuguese language grade data files</li>
 <li>Calculating average alcohol use and creating new logical variable high_use which shows alc_use’ is greater than 2.</li>
 </ol>
-</div>
-<div id="overview" class="section level1">
-<h1>Overview</h1>
+<div id="overview" class="section level2">
+<h2>Overview</h2>
 <pre class="r"><code>#Read in the prepared data
-data &lt;- read.csv(&quot;C:/Users/Localadmin_neimane/Desktop/Data Science/OpenDataScience/IODS-project/data/JoinedMathPorData.txt&quot;, sep=&quot;&quot;)</code></pre>
-<pre class="r"><code>#Show names of the variables
+data &lt;- read.csv(&quot;C:/Users/Localadmin_neimane/Desktop/Data Science/OpenDataScience/IODS-project/data/JoinedMathPorData.txt&quot;, sep=&quot;&quot;)
+
+#Show names of the variables
 names(data)</code></pre>
 <pre><code>##  [1] &quot;school&quot;        &quot;sex&quot;           &quot;age&quot;           &quot;address&quot;      
 ##  [5] &quot;famsize&quot;       &quot;Pstatus&quot;       &quot;Medu&quot;          &quot;Fedu&quot;         
@@ -197,7 +197,49 @@ names(data)</code></pre>
 ## [33] &quot;G3.math&quot;       &quot;failures.por&quot;  &quot;paid.por&quot;      &quot;absences.por&quot; 
 ## [37] &quot;G1.por&quot;        &quot;G2.por&quot;        &quot;G3.por&quot;        &quot;alc_use&quot;      
 ## [41] &quot;high_use&quot;</code></pre>
-<p>Data set includes information like, the sex and age, family size, parent education level, travel time to school, internet access and much more. There are in total 370 observations with 41 column. Variable ending .math or .por indicates the variable being source from Mathematics (.math) or Portuguese language (.por).</p>
+<p>Data set includes information like, the sex and age (15 - 22), family size (less or more than 3 persons), parent education level, travel time to school, internet access and much more. There are in total 370 observations with 41 column. Variable ending .math or .por indicates the variable being source from Mathematics (.math) or Portuguese language (.por).</p>
+</div>
+<div id="analysis" class="section level2">
+<h2>Analysis</h2>
+<p>For further analysis I will study the relationships between high/low alcohol consumption and the following variables:</p>
+<ol style="list-style-type: decimal">
+<li>activities - extra-curricular activities (binary: yes or no)</li>
+<li>freetime - free time after school (numeric: from 1 - very low to 5 - very high)</li>
+<li>romantic - with a romantic relationship (binary: yes or no)</li>
+<li>famrel - quality of family relationships (numeric: from 1 - very bad to 5 - excellent)</li>
+</ol>
+<p>These variables were chosen to test if lack of hobbies and close personal relationships results in increased alcohol consumption among the students. Lack of hobbies is represented with variable <strong>activities</strong> and <strong>freetime</strong>. Whilst absence of close personal relationships can be determined trough variables <strong>romantic</strong> and <strong>famrel</strong> (unfortunately the data set does not include variable indicating friendships). At this point I expected that with <em>no</em> activities and <em>very high</em> free time, <em>no</em> romantic relationship and <em>1-very bad</em> quality of family relationship will result in increased alcohol consumption.</p>
+<div id="cross-tabulations-and-graphical-exploration" class="section level3">
+<h3>Cross-tabulations and graphical exploration</h3>
+<pre class="r"><code>#Show names of the variables
+library(ggplot2)
+
+par(mfrow = c(2,2))
+
+GraphAct &lt;- ggplot(data, 
+       aes(x = activities, 
+           fill = high_use)) + 
+  geom_bar(position = &quot;fill&quot;) +
+  labs(y = &quot;Proportion&quot;)
+
+GraphFTime &lt;- ggplot(data, 
+       aes(x = freetime, 
+           fill = high_use)) + 
+  geom_bar(position = &quot;fill&quot;) +
+  labs(y = &quot;Proportion&quot;)
+
+GraphFTime &lt;- ggplot(data, 
+       aes(x = romantic, 
+           fill = high_use)) + 
+  geom_bar(position = &quot;fill&quot;) +
+  labs(y = &quot;Proportion&quot;)
+
+GraphFam &lt;- ggplot(data, 
+       aes(x = famrel, 
+           fill = high_use)) + 
+  geom_bar(position = position_dodge(preserve = &quot;single&quot;))</code></pre>
+</div>
+</div>
 </div>
 
 

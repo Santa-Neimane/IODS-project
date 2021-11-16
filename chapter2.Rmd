@@ -51,12 +51,16 @@ We can observe the correlation between variables **Attitude** and the exam resul
 Whilst some of the boxplots in the upper part of the graph show outliers in the point graphs, for the first analysis we will not remove them since they are not very extreme values. This will be rechecked with model diagnostics.  
 
 ## Regression model
-The task was to fit a regression model where exam points is the target dependent variable and there are 3 explanatory variables. 
+The task was to fit a regression model where exam points is the target dependent variable and there are 3 explanatory variables. The visual analysis of the highest correlation and linear regression show that model 3 is the best, which includes attitude, stra and age.
+The following steps to check this were: 
 
+1. Build a model with all variables
 ```{r}
 model1 <- lm(Points ~ gender + Age +Attitude + deep + stra + surf, data = data)
 summary(model1)
 ```
+
+2. Reduce number of factors in the model starting from the least significant. 
 Gender is the least significant variable to explain exam point result so we make a new model without including it. 
 
 ```{r}
@@ -103,7 +107,7 @@ AIC(model4)
 AIC(model5)
 AIC(model6)
 ```
-The lowest AIC score is for model4 where all 3 explanatory variables were included (age + Attitude + stra). 
+Even though only attitude is significant, the other factors are close to significance and slightly improve the model (the lowest AIC score) thus the model4 where all 3 explanatory variables were included (age + Attitude + stra) is chosen for deeper analysis. 
 
 ## Model diagnostics
 ### Variance Inflation Factor

@@ -14,16 +14,127 @@ Data was set up by:
 2. Calculating average alcohol use and creating new logical variable high_use which shows alc_use' is greater than 2.
 
 
-# Overview
+## Overview
 
 
 ```{r echo=TRUE}
 #Read in the prepared data
 data <- read.csv("C:/Users/Localadmin_neimane/Desktop/Data Science/OpenDataScience/IODS-project/data/JoinedMathPorData.txt", sep="")
-```
-```{r}
+
 #Show names of the variables
 names(data)
 ```
-Data set includes information like, the sex and age, family size, parent education level, travel time to school, internet access and much more. There are in total 370 observations with 41 column. Variable ending .math or .por indicates the variable being source from Mathematics (.math) or Portuguese language (.por).
+Data set includes information like, the sex and age (15 - 22), family size (less or more than 3 persons), parent education level, travel time to school, internet access and much more. There are in total 370 observations with 41 column. Variable ending .math or .por indicates the variable being source from Mathematics (.math) or Portuguese language (.por).
+
+
+## Analysis
+
+For further analysis I will study the relationships between high/low alcohol consumption and the following variables: 
+
+1. activities - extra-curricular activities (binary: yes or no)
+2. freetime - free time after school (numeric: from 1 - very low to 5 - very high)
+3. romantic - with a romantic relationship (binary: yes or no)
+4. famrel - quality of family relationships (numeric: from 1 - very bad to 5 - excellent)
+
+These variables were chosen to test if lack of hobbies and close personal relationships results in increased alcohol consumption among the students. Lack of hobbies is represented with variable **activities** and **freetime**. Whilst absence of close personal relationships can be determined trough variables **romantic** and **famrel** (unfortunately the data set does not include variable indicating friendships). At this point I expected that with *no* activities and *very high* free time, *no* romantic relationship and *1-very bad* quality of family relationship will result in increased alcohol consumption. 
+
+### Graphical exploration
+
+
+```{r}
+library(ggplot2)
+library(cowplot)
+
+library(RColorBrewer)
+
+# your palette definition
+scale_colour_whatever <- colorRampPalette(c("darkblue", "blue", "lightblue1",
+                              "green","yellow", "red", "darkred"))
+
+options(ggplot2.continuous.colour="whatever")
+
+
+# Plot the relationship of activities and alcohol consumption
+GraphAct <- ggplot(data, 
+       aes(x = activities, 
+           fill = high_use)) + 
+  geom_bar(position = "stack")+
+  ggtitle("Extra-curricular activities") 
+
+GraphActProp <- ggplot(data, 
+       aes(x = activities, 
+           fill = high_use)) + 
+  geom_bar(position = "fill") +
+  labs(y = "Proportion")
+
+plot_grid(GraphAct, GraphActProp)
+
+```
+
+
+
+```{r}
+# Plot the relationship of freetime and alcohol consumption
+GraphFTime <- ggplot(data, 
+       aes(x = freetime, 
+           fill = high_use)) + 
+  geom_bar(position = "stack")+
+  ggtitle("Free time after school")+
+  labs(x = "free time after school 
+       (from 1 - very low to 5 - very high)")
+
+GraphFTimeProp <- ggplot(data, 
+       aes(x = freetime, 
+           fill = high_use)) + 
+  geom_bar(position = "fill") +
+  labs(y = "Proportion")+
+  labs(x = "free time after school 
+       (from 1 - very low to 5 - very high)")
+
+plot_grid(GraphFTime, GraphFTimeProp)
+
+```
+
+
+
+```{r}
+# Plot the relationship of romantic relationship and alcohol consumption
+GraphRom <- ggplot(data, 
+       aes(x = romantic, 
+           fill = high_use)) + 
+  geom_bar(position = "stack")+
+  ggtitle("with a romantic relationship")
+
+GraphRomProp <- ggplot(data, 
+       aes(x = romantic, 
+           fill = high_use)) + 
+  geom_bar(position = "fill") +
+  labs(y = "Proportion")
+
+plot_grid(GraphRom, GraphRomProp)
+
+```
+
+
+```{r}
+# Plot the relationship of family relationship and alcohol consumption
+GraphFamR <- ggplot(data, 
+       aes(x = famrel, 
+           fill = high_use)) + 
+  geom_bar(position = "stack")+
+  ggtitle("quality of family relationships")+
+  labs(x="quality of family relationships 
+       (from 1 - very bad to 5 - excellent)")
+
+GraphFamRProp <- ggplot(data, 
+       aes(x = famrel, 
+           fill = high_use)) + 
+  geom_bar(position = "fill") +
+  labs(y = "Proportion")+
+  labs(x="quality of family relationships 
+       (from 1 - very bad to 5 - excellent)")
+
+plot_grid(GraphFamR, GraphFamRProp)
+
+```
 
