@@ -4,7 +4,7 @@ In this part we looked at logistic regression to analyse student alcohol consump
 ```{r}
 date()
 ```
-In the following analysis I will analyse a data originating from a data set *Student achievement in secondary education of two Portuguese schools*. More information and data can be found here: https://archive.ics.uci.edu/ml/datasets/Student+Performance
+In the following analysis I will analyse a data originating from a data set **Student achievement in secondary education of two Portuguese schools**. More information and data can be found here: https://archive.ics.uci.edu/ml/datasets/Student+Performance
 
 Original data and script for data set up can be found: IODS-project/data/create_alc.R script.
 
@@ -32,32 +32,29 @@ Data set includes information like, the sex and age (15 - 22), family size (less
 For further analysis I will study the relationships between high/low alcohol consumption and the following variables: 
 
 1. activities - extra-curricular activities (binary: yes or no)
-2. freetime - free time after school (numeric: from 1 - very low to 5 - very high)
+2. freetime - free time after school (from 1 - very low to 5 - very high)
 3. romantic - with a romantic relationship (binary: yes or no)
-4. famrel - quality of family relationships (numeric: from 1 - very bad to 5 - excellent)
+4. famrel - quality of family relationships (from 1 - very bad to 5 - excellent)
 
-These variables were chosen to test if lack of hobbies and close personal relationships results in increased alcohol consumption among the students. Lack of hobbies is represented with variable **activities** and **freetime**. Whilst absence of close personal relationships can be determined trough variables **romantic** and **famrel** (unfortunately the data set does not include variable indicating friendships). At this point I expected that with *no* activities and *very high* free time, *no* romantic relationship and *1-very bad* quality of family relationship will result in increased alcohol consumption. 
+These variables were chosen to test if lack of hobbies and close personal relationships results in increased alcohol consumption among the students. Lack of hobbies is represented with variable **activities** and **freetime**. Whilst absence of close personal relationships can be determined trough variables **romantic** and **famrel**. At this point I expected that with *no* activities and *very high* free time, *no* romantic relationship and *1-very bad* quality of family relationship will result in increased alcohol consumption. 
 
 ### Graphical exploration
-
+**In the following sections on the left you can see the barplots with the number (count) of the answers, whilst on the right one can see the proportion.** The graph on the left is presented so the reader can see see the data distribution among groups, whilst the right to see the proportions and thus possibility to conclude about the possible factors that affect the alcohol consumption. 
 
 ```{r}
+data$famrel <- factor(data$famrel)
+data$freetime <- factor(data$freetime)
+data$activities <- factor(data$activities)
+data$romantic <- factor (data$romantic)
+
+#Load the packages
 library(ggplot2)
 library(cowplot)
-
-library(RColorBrewer)
-
-# your palette definition
-scale_colour_whatever <- colorRampPalette(c("darkblue", "blue", "lightblue1",
-                              "green","yellow", "red", "darkred"))
-
-options(ggplot2.continuous.colour="whatever")
-
+library(dplyr)
 
 # Plot the relationship of activities and alcohol consumption
 GraphAct <- ggplot(data, 
-       aes(x = activities, 
-           fill = high_use)) + 
+       aes(x = activities)) + 
   geom_bar(position = "stack")+
   ggtitle("Extra-curricular activities") 
 
@@ -72,12 +69,13 @@ plot_grid(GraphAct, GraphActProp)
 ```
 
 
+In the *Extra-curricular activities graphs* we can firstly see that the number of students having and not having activities is similar (~180). The proportion of high alcohol consumption is among students with no extra-curricular activities is slightly higher.  
+
 
 ```{r}
 # Plot the relationship of freetime and alcohol consumption
 GraphFTime <- ggplot(data, 
-       aes(x = freetime, 
-           fill = high_use)) + 
+       aes(x = freetime)) + 
   geom_bar(position = "stack")+
   ggtitle("Free time after school")+
   labs(x = "free time after school 
@@ -96,12 +94,13 @@ plot_grid(GraphFTime, GraphFTimeProp)
 ```
 
 
+The second graph **Free time after school** division in free time groups is not equal, there are more students that had an average amount free time after school than with a high and very low amount of free time. The graph with proportions clearly approve the hypotheses that alcohol consumtion increases with more available free time.
+
 
 ```{r}
 # Plot the relationship of romantic relationship and alcohol consumption
 GraphRom <- ggplot(data, 
-       aes(x = romantic, 
-           fill = high_use)) + 
+       aes(x = romantic)) + 
   geom_bar(position = "stack")+
   ggtitle("with a romantic relationship")
 
@@ -116,11 +115,14 @@ plot_grid(GraphRom, GraphRomProp)
 ```
 
 
+
+In the third graph **with a romantic relationship** we can see that most of the students did not have a romantic relationship. Whilst proportion graph shows that the students with romantic relationship had only slightly lower proportion of students with high alcohol consumption.
+
+
 ```{r}
 # Plot the relationship of family relationship and alcohol consumption
 GraphFamR <- ggplot(data, 
-       aes(x = famrel, 
-           fill = high_use)) + 
+       aes(x = famrel)) + 
   geom_bar(position = "stack")+
   ggtitle("quality of family relationships")+
   labs(x="quality of family relationships 
@@ -137,4 +139,170 @@ GraphFamRProp <- ggplot(data,
 plot_grid(GraphFamR, GraphFamRProp)
 
 ```
+
+
+In the forth **quality of family relationships** graph we can see that most of the students had good and excellent relationships with family. In the proportions we can see that with increased quality of family relationships there are less students that consume high amount of alcohol, thus confirming the hypothesis that students who have good family relationships consume less alcohol. As for the proportion of students with very bad relationships, on the left we can see that the there only few students, perhaps due to this reason the proportion does not fit the general pattern. 
+
+
+### Logistic regression model
+
+In this section multiple models will be built. The best fitting one will be analysed in detail, the predictive power will be explored and the model will be cross-validated. First I will build a model with all of the variables that were selected.
+
+```{r}
+#Seting the chosen variables as factors
+data$famrel <- factor(data$famrel)
+data$freetime <- factor(data$freetime)
+data$activities <- factor(data$activities)
+data$romantic <- factor (data$romantic)
+
+#building model with glm() with all of the factors
+model1  <- glm(high_use ~ famrel + romantic + freetime + activities, data = data, family=binomial)
+#showing summary
+summary(model1)
+```
+
+
+Activities after school and romantic relationship factors are not significant suggesting there is no association with the probability of having high alcohol consumption. 
+
+
+
+```{r}
+
+#the model with glm() without non-significant romantic relationship factor
+model2  <- glm(high_use ~ famrel + freetime + activities, data = data, family=binomial)
+
+summary(model2)
+```
+Also this model does not suggest an association between activities and alcohol consumption.
+
+
+```{r}
+
+#the model with glm() without non-significant activities factor
+model3  <- glm(high_use ~ famrel + freetime, data = data, family=binomial)
+
+summary(model3)
+```
+
+
+```{r}
+# Building the simples possible model
+model4  <- glm(high_use ~ freetime, data = data, family=binomial)
+summary(model4)
+
+#Exploring how model change with removing variables
+AIC(model1,model2, model3, model4)
+
+```
+
+Model 3 has the lowest AIC score.
+
+```{r}
+anova(model1, model2, model3, model4, test="LRT")
+```
+
+Model4 is significantly different according to the likelihood ratio test.
+
+Data visual exploration coincided with the outputs of models. Factors **freetime** (free time) and **famrel** *(family relationships) effected the probability of alcohol consumption by the students. According to the graphical exploration, Akaike information criterion and likelihood ratio test the best model is model 3 thus it will be used for further analysis. 
+
+
+In the original model3 version we see that the reference value for family relationships is famrel1 (very bad relationship). As we recall this was a rather problematic case, because of the very small amount of students thus we change the reference value from very bad 1 to 3 average. The same problem occurs with the variable freetime thus we change it to average free time to student as well. 
+
+
+```{r}
+#Set the average family relationship and average free time as the reference
+data <- within(data, famrel <- relevel(famrel, ref = 3))
+data <- within(data, freetime <- relevel(freetime, ref = 3))
+#Re-run the model
+model3  <- glm(high_use ~ famrel + freetime, data = data, family=binomial)
+
+summary(model3)
+
+```
+
+
+In the summary we can see that going to bad family relationships (famrel2) from average relationships (famrel3) increase the log odds of the student consuming high amounts of alcohol by 0.36. But from average family relationship to excellent (famrel5) relationship decrease the odds by 0.96.
+Freetime also shows that from average free time (the reference freetime3) to a lot of free time (freetime) the log odds of high alcohol consumption increases by 0.71. On the other hand, from average to very limited amount of free time (freetime1) the log odds to get high alcohol consumption decreases by 1.2.
+The difference between Null deviance and Residual deviance shows that the model is good fit, since there is a big difference. Residual deviance shows the case when the variables are included, but only intercept value for the null deviance.
+
+### Odds ratios
+
+```{r}
+#calculate odds ratios (OR)
+OR <- coef(model3) %>% exp
+
+#calculate confidence intervals (CI)
+CI <- confint(model3) %>% exp
+
+#present the odds ratios with their confidence intervals
+cbind(OR, CI)
+```
+In the above table the estimated odds ratios and 95% CIs for each variable can be seen.
+The obtained results coincide with the hypotheses that lack of close family increase the odds of student to have high alcohol consumption (odd of students with bad family relationships having high alcohol are increased (1.43) in comparison with students who have average family relationships). The opposite can be seen with students who have good and excellent relationships, the odds ratio is less than 1. It was also in the beginning of the analysis correctly hypothesized that students who have good family relationships and fulfilled free time are less likely to highly consume alcohol. 
+
+### Predictive power 
+
+Further we will model prediction ability.
+```{r}
+#  calculate the probability of high_use
+probabilities <- predict(model3, type = "response")
+
+# add the predicted probabilities
+data <- mutate(data, probability = probabilities)
+
+
+# use the probabilities to make a prediction of high_use
+data <- mutate(data, prediction = probability > 0.5)
+ResultProbTable <- select(data, freetime, famrel, high_use, probability, prediction)
+
+library(DT)
+#Made a smaller more interactive result table otherwise it takes up a lot of space in the document. Feel free to scroll trough it
+datatable(ResultProbTable, options = list(pageLength = 5))
+```
+
+```{r}
+# tabulate the target variable versus the predictions
+table(high_use = data$high_use, prediction = data$prediction)
+```
+Of the 259 FALSE values the developed model wrongly assigned 14 to TRUE. Most of the TRUE values model predicted to be FALSE. The probability versus the alcohol use can be seen in the graph. 
+
+```{r}
+# Graph the results
+ggplot(data, aes(x = probability, y = high_use))+
+  geom_point(position=position_jitter(h=0.000001,w=0.1), aes(colour = prediction))+
+  theme_bw()
+#jitter has been added since the points closely overlap
+```
+
+```{r}
+# tabulate the target variable versus the predictions
+table(high_use = data$high_use, prediction = data$prediction) %>% prop.table %>% addmargins
+```
+The table above shows how the model incorrectly underestimates proportion of TRUE values and overestimates the FALSE amount of points. In the data set 0.3 are true whilst only model predicted proportion would be much smaller 0.07.
+
+```{r}
+#define average prediction error
+loss_func <- function(class, prob) {
+  n_wrong <- abs(class - prob) > 0.5
+  mean(n_wrong)
+}
+
+#calculate the average number of wrong predictions
+loss_func(class = data$high_use, prob = data$probability)
+
+```
+Total proportion of inaccurately classified individuals is 0.3. And as we saw before most of those are TRUE values that were assigned according to the model to FALSE. Still this model would better predict (~70%) than random guessing with 50% probability.
+
+### Cross-validation
+Here 10-fold cross-validation is used to determine the models predictive power by sub-setting the original data set and testing the the models predictive power against the part of the data (sub-set) that was not used to build the model. 
+```{r}
+# K-fold cross-validation
+library(boot)
+cv <- cv.glm(data = data, cost = loss_func, glmfit = model3, K = 10)
+
+# average number of wrong predictions in the cross validation
+cv$delta[1]
+
+```
+Model3 has worse (0.32) test set performance (smaller prediction error using 10-fold cross-validation) compared to the model introduced in DataCamp (which had about 0.26 error). The performance of model3 can be improved by adding previously unexplored variables into the model.
 
