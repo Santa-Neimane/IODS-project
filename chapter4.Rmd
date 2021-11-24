@@ -1,0 +1,219 @@
+# Clustering and classification
+## Data preparation
+In this task we will use data from the MASS package, the Boston data set. This data set describes housing values in suburbs of Boston. All the information about this data set can be found here: https://stat.ethz.ch/R-manual/R-devel/library/MASS/html/Boston.html
+In short, data set consists of multiple different variables, like nitrogen oxides concentration, per capita crime rate by town, pupil-teacher ratio by town and others. 
+Abbreviations can be seen here: 
+**crim** - per capita crime rate by town.
+
+**zn** - proportion of residential land zoned for lots over 25,000 sq.ft.
+
+**indus** - proportion of non-retail business acres per town.
+
+**chas** - Charles River dummy variable (= 1 if tract bounds river; 0 otherwise).
+
+**nox** - nitrogen oxides concentration (parts per 10 million).
+
+**rm** - average number of rooms per dwelling.
+
+**age** - proportion of owner-occupied units built prior to 1940.
+
+**dis** - weighted mean of distances to five Boston employment centres.
+
+**rad** - index of accessibility to radial highways.
+
+**tax** - full-value property-tax rate per \$10,000.
+
+**ptratip** - pupil-teacher ratio by town.
+
+**black** - 1000(Bk - 0.63)^2 where Bk is the proportion of blacks by town.
+
+**lstat** - lower status of the population (percent).
+
+**medv** - median value of owner-occupied homes in \$1000s.
+
+
+```{r, fig.width = 12, fig.height=12}
+#Load the needed package
+library(MASS)
+library(ggplot2)
+library(GGally)
+# Load the dataset
+data("Boston")
+
+# Explore the structure and the dimensions 
+dim(Boston)
+str(Boston)
+summary(Boston)
+
+
+ggpairs(Boston, lower = list(combo = wrap("facethist", bins = 20)))
+```
+
+Data set consists of 506 rows and 14 variables. There is a large variability between *per capita crime rate by town*, the minimal value is 0.006 and the maximal value is 88.98 with the mean of 6.14. Similar with *zn - proportion of residential land zoned for lots over 25,000 sq.ft.* and *black - the proportion of blacks by town*. *Chas* Charles River dummy variable is a binary variable. *nox*  nitrogen oxides concentration (parts per 10 million) and *dis* weighted mean of distances to five Boston employment centres seem to be correlated. Just so as *rm* average number of rooms per dwelling and *lstat* lower status of the population (percent) and *medv* median value of owner-occupied homes. It seems that *medv* and *lstat* are correlate as well. 
+
+```{r}
+#Standardize the dataset
+boston_scaled <- scale(Boston)
+
+
+#Change from object
+boston_scaled <- as.data.frame(boston_scaled)
+#See the change
+summary(boston_scaled)
+```
+
+After data transformation with scaling the data the range of data values do not differ so widely. 
+
+Next we will create a categorical variable of the crime rate and use the quantiles as the break points.
+
+```{r}
+#Create a quantile vector of crim rate
+bins <- quantile(boston_scaled$crim)
+bins
+
+#Add new variable
+boston_scaled$crime <- cut(boston_scaled$crim, breaks = bins, include.lowest = TRUE, labels = c("low", "med_low", "med_high", "high"))
+
+library(dplyr)
+#Remove the old variable
+boston_scaled <- dplyr::select(boston_scaled, -crim)
+```
+
+Here I divide the dataset to train (with 80% of the data) and test set.
+
+```{r}
+n <- nrow(boston_scaled)
+
+#Choose randomly 80% of data
+ind <- sample(n,  size = n * 0.8)
+
+#Create train set
+train <- boston_scaled[ind,]
+#Create test set 
+test <- boston_scaled[-ind,]
+```
+
+## Linear discriminant analysis
+
+Here I will fit the linear discriminant analysis on the train set and draw the LDA (bi)plot. Crime rate will be used as the categorical target variable and all the other variables in the dataset as predictor variables. 
+
+
+```{r}
+# Fit the analysis
+lda.fit <- lda(crime ~ ., data = train)
+
+# print the analysis result
+lda.fit
+
+# the function for lda biplot arrows
+lda.arrows <- function(x, myscale = 1, arrow_heads = 0.1, color = "blue4", tex = 0.75, choices = c(1,2)){
+  heads <- coef(x)
+  arrows(x0 = 0, y0 = 0, 
+         x1 = myscale * heads[,choices[1]], 
+         y1 = myscale * heads[,choices[2]], col=color, length = arrow_heads)
+  text(myscale * heads[,choices], labels = row.names(heads), 
+       cex = tex, col=color, pos=3)
+}
+
+# target classes as numeric
+classes <- as.numeric(train$crime)
+
+# plot the lda results
+plot(lda.fit, dimen = 2, col = classes, pch = classes)
+lda.arrows(lda.fit, myscale = 2)
+```
+
+
+Based on the biplot, *high* separated very clearly. Based on arrows, *rad* index of accessibility to radial highways explained more for *high* values than for others. There is an overlap between *low*,*med_low*, *med_high*. 
+
+### Cross-tabulation with test set
+
+Now we will cross tabulate the results with the crime categories from the test set.
+
+```{r}
+#Obtain the true classes for the variables of test dataset
+correct_classes <- test$crime
+
+#Remove the crime classes from test data set 
+test <- dplyr::select(test, -crime)
+
+#Predict classes with the fitted linear discriminant analysis
+lda.pred <- predict(lda.fit, newdata = test)
+
+#Cross tabulate the results with the crime categories from the test set
+table(correct = correct_classes, predicted = lda.pred$class)
+```
+The fitted linear discriminant analysis correctly divided all *high* values from the test data set. Also most of true *med_low* were correctly assigned. Worse performance was for *med_high* where variables were the analysis could not separate these values apart from med_low group. It has to be taken into account that the model could change depending on the random data set deviation into the train and test sets. 
+
+
+### Optimal number of clusters
+Further we will investigate what would have been the optimal number of clusters.
+
+```{r, fig.width = 12, fig.height=12}
+#Make a new scaled version of the dataset
+library(MASS)
+data("Boston")
+boston_scaled2 <- scale(Boston)
+
+#Calculate euclidean distance
+dist_eu <- dist(boston_scaled2)
+
+#Summary of the distances
+summary(dist_eu)
+
+km <-kmeans(boston_scaled2, centers = 2)
+
+#Datapoints divided  in 2 clusters
+pairs(boston_scaled2, col = km$cluster)
+
+```
+
+
+```{r, fig.width = 12, fig.height=12}
+km <-kmeans(boston_scaled2, centers = 3)
+
+#Datapoints divided in 3 clusters
+pairs(boston_scaled2, col = km$cluster)
+```
+
+
+
+```{r, fig.width = 12, fig.height=12}
+km <-kmeans(boston_scaled2, centers = 4)
+
+#Datapoints divided in 4 clusters
+pairs(boston_scaled2, col = km$cluster)
+```
+
+
+
+```{r, fig.width = 12, fig.height=12}
+km <-kmeans(boston_scaled2, centers = 5)
+
+#Datapoints divided in 5 clusters
+pairs(boston_scaled2, col = km$cluster)
+```
+
+As it is hard to visually determine the number of clusters, I will compare the sum of squared error (SSE) for a number of cluster solutions to choose the appropriate number of clusters.
+
+```{r}
+library(factoextra)   
+fviz_nbclust(boston_scaled2, kmeans, method = "wss")
+```
+
+The output confirmed that more than 2 clusters are needed. 
+
+Lets determine the number clusters according to the Bayesian Information Criterion for expectation-maximization here: 
+```{r}
+library(mclust)
+# Run the function to see how many clusters (from 1 to 20)
+d_clust <- Mclust(as.matrix(boston_scaled2), G=1:20)
+m.best <- dim(d_clust$z)[2]
+cat("model-based optimal number of clusters:", m.best, "\n")
+```
+Thus we can conclude that the data could be well divided in 5 clusters.
+
+
+
+
+
