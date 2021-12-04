@@ -1,0 +1,188 @@
+# Dimensionality reduction techniques
+
+## Overview of the data
+Data set used in the following was build from United Nations Development Programme Human Development Report data which focused on evaluation of human development (length of life and health, knowledge, standard of living) and how gender inequality affects this development (female reproductive health, labour market and parliamentary gender representation).  
+
+Original data sets can be found here: http://hdr.undp.org/en/content/human-development-index-hdi and here:http://hdr.undp.org/sites/default/files/hdr2015_technical_notes.pdf
+Data preparation can be found in scripts create_human.R and further edits in human_edited.R.
+
+
+Short description of the data set variables:
+
+**SecEdRatioFM** - *calculated* female / male populations with secondary education in each country
+**LabForceRatioFM** - *calculated* ratio of labour force participation of females and males in each country 
+**ExpecYearsEd** - Expected years of education
+**LifeExpec** - Life expectancy at Birth 
+**GNI** - Gross national income per capita
+**MatMortRat** - Maternal mortality ratio
+**AdolecBirthRate** - Adolescent birth rate
+**RepresParl** - Percent representation in parlament
+
+
+
+### Data exploration
+
+```{r, fig.height=9, fig.width=9}
+#Read in the data
+data <- read.csv("C:/Users/Localadmin_neimane/Desktop/Data Science/OpenDataScience/IODS-project/data/humanEdit.txt", sep="")
+
+#Load packages
+library(ggplot2)
+library(GGally)
+
+#Plot
+ggpairs(data, lower = list(combo = wrap("facethist", bins = 20)))
+```
+
+Many of the explored variables are correlated. Highest correlation coefficient (-0.857) maternal mortality ratio and Life expectancy at Birth. In countries with high maternal mortality ratio it is expected that life will be shorter. Strong correlation can also be observed between Life expectancy at Birth & Expected years of education,  Adolescent birth rate & Life expectancy at Birth, maternal mortality ratio & Expected years of education.
+Of the variables Expected years of education variable seem to follow *normal distribution*. While GNI and AdolecBirthRate seem to have *log normal* distribution. RepresParl appear to have *Poisson* distribution.And the rest perhaps follow *beta* distribution.
+
+
+```{r}
+#Summaries of the variables in the data set
+summary(data)
+```
+All of the examined variables have a wide range of values thus showing how different the examined countries are. In average there are slightly more countries where males have secondary education than women, in most countries there are less women in the labour force, people have expected 14 years of education. The average life expectancy at birth is 72 years, GNI is 17628, maternal mortality ratio is 149, adolescent birth rate is 47 and there are 21% women in the parliament. 
+
+
+
+## Principal Component Analysis
+
+First of all we will look at the PCA when the data has not been scaled. Afterwards we will scale the data and run the analysis again. 
+
+```{r setup, warning=FALSE,fig.width=9}
+#Run the analysis on non-scaled data
+dataPCA <- prcomp(data)
+
+#Call summary
+s <- summary(dataPCA)
+#Add precetentages
+pca_pr <- round(100*s$importance[2,], digits = 1) 
+#Make label names
+pc_lab <- paste0(names(pca_pr), " (", pca_pr, "%)")
+#Plot the result with 
+plotnoSTD <- biplot(dataPCA, cex = c(0.8, 1), col = c("grey40", "blue"), xlab = pc_lab[1], ylab = pc_lab[2], 
+sub="The non-standardized data can not be used for PCA (GNI sd affects PC1 unfairly)")
+```
+
+Let's scale the data to standardize it and re-run the analysis. This time we will use fviz_pca_biplot() function to make more aesthetically pleasing graph.
+
+
+```{r}
+#Scale data
+data_STD <- scale(data)
+library("factoextra")
+library("FactoMineR")
+
+
+#Run the analysis
+data_STD.pca <- PCA(data_STD, graph = FALSE)
+
+#Make plot
+plotSTD <- fviz_pca_biplot(data_STD.pca,  repel = TRUE,
+                col.var = "#2E9FDF",
+                col.ind = "#c3c3c3")
+#Add caption
+ggpubr::ggpar(plotSTD, caption = "Rich countries (high GNI) have better life and years of expectancy,
+              just as higher female to male secondary education ratio. 
+              Whilst countries with high maternal mortality rate also have high adolescent birth rate.")
+
+```
+
+The results differ between non-standardized data analysis and standardized data analysis. In the analysis with  non-standardized data the principal component explained all of the variance. This is because PCA calculates the new projection based on the standard deviations of the variables in the analysis. In our data set GNI has a very large standard deviation thus it has higher weight on the new projection. Thus to calculate relevant projection standardized data with same deviation is needed.
+
+Almost 70% of the variance in the data is explained by the first two dimensions of the PCA. 
+*ExpecYearsEd*, *GNI*, *SecEdRatioFm* and *LifeExpec* are highly correlated. *MatMortRat* and *AdolecBirthRate* are also highly correlated.  These variables are important contributors to the first principal component. To the second component *LabForceRatioFM* and *RepresParl* are the most important contributor. Countries that are close to each other in the biplot represent observations with similar values. 
+
+
+
+
+## Multiple Correspondence Analysis
+
+### Data exploration
+
+I will use the tea dataset from the package *FactoMineR* to perform multiple correspondence analysis. 
+
+
+```{r}
+#Load package
+library(FactoMineR)
+data("tea")
+dim(tea)
+str(tea)
+```
+
+Data consists of 300 rows and 36 columns. Data describes how the tea is drunk, how tea is perceived and some personal details about the participants. All variables apart from age are factorial variables. Most of them are binary. Price has 6 levels. 
+
+Data visualized here:
+
+```{r, fig.height = 15, fig.width=18}
+
+library(mlbench)
+library(purrr)
+library(ggplot2)
+library(gridExtra)
+
+#Read in data
+data("tea")
+
+#Automatically plot all of the data
+marrangeGrob(
+  map(
+    names(tea), 
+    ~ ggplot(tea, aes_string(.x)) + 
+      geom_bar()+
+      theme_bw()
+  ),
+  ncol = 4,
+  nrow = 9,
+  top = "tea Distribution"
+)
+
+```
+
+### Multiple Correspondence Analysis
+
+```{r}
+#Multiple Correspondence Analysis on the tea data
+
+#Building the model with active variables describing how they drink tea, age variable (19) as quantitative supplementary variable and other variables describing personal details and product perception as qualitative supplementary variables. 
+teaMCA <- MCA (tea, quanti.sup = 19, quali.sup=c(20:36), graph = FALSE)
+
+#Busy graphs are produced, so adjustments will be made and presented after looking at the summary of the analysis. 
+
+```
+
+
+```{r}
+#First let's check the summary of the model with all categorical variables
+summary(teaMCA, nbelements = Inf)
+```
+
+
+First line in the output of the summary we see how we set up the MCA analysis. In this case we are mainly looking at tea drinking variables (1-18 column), whilst including the rest of the variables as supplementary info. 
+Afterwards we see eigenvalues for the 18 dimensions. Dim1 principal component explains 9.9% of variance in entire dataset. 
+Next we see the results for 76 participant results (coordinate values, contribution to the axes and squared cosine value - quality of representation). Contribution to the axes are small, but it has to be taken into account that all 300 individuals were included in the analysis. All of these results are shown for the first 3 dimensions separately. In the following paragraph description of categories is presented in the same way, only there is additional column of v.test which can be used to see which in categories there are large negative or positive values in the corresponding dimension. Largest contribution to dimension 1 is given by **tearoom** and **chain store+tea shop** categories. Lower we see the *eta2* biggest value is for variable **where** thus showing the biggest correlation with dimension 1. Next information about the supplementary variables can be seen (no contribution since they are set as supplementary in this analysis).In the end the only quantitative variable **age** coordinate value is given. 
+
+
+
+### Graphical summary
+
+```{r} 
+#Variable biplot of the analysis
+#Selected 
+fviz_mca_biplot(teaMCA,label ="var", col.ind="lightgray",
+                repel = TRUE,
+                labelsize = 3)
+
+```
+
+
+Since the graph with all of the variable categories is too busy, to visualize the analysis I set the individual data points in the background and in grey color. No clear pattern or grouping emerge in the background individual data points. 18% of data are represented by first two dimensions - components. First component opposes *tearoom*, *resto*,*lunch* and *pub* with  *Not.friends*, *Not.home* and *Not.tea time*. Thus opposing individuals who do not regularly drink tea and those who drink tea in many places. Second component distinquish *teashop*, *unpackaged* and *p_upscale* from the rest of the groups, which based on intuition could be true. 
+
+
+
+
+
+
+
