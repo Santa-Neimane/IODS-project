@@ -1,0 +1,369 @@
+```{r}
+#All necessary libraries
+library(dplyr)
+library(tidyr)
+library(ggplot2)
+library(ez)
+library(ggpubr)
+library(broom)
+library(lme4)
+library(cowplot)
+library(lattice)
+library(gridExtra)   
+```
+
+
+
+# Analysis of longitudinal data
+
+## Summary Measure Approach
+
+### Overview of data source
+First I will look at summary measure approach to study longitudinal data. To do this I will use data from a study about rat nutrition. The study looks at how rats (each rat has unique **ID**) who were given one of three nutritionally different diets (**Group**) gained weight (**value**) over the 9-week study period(**Time** - in days). There were 16 rats in the study. 
+
+The data set used can be found here: https://raw.githubusercontent.com/KimmoVehkalahti/MABS/master/Examples/data/rats.txt
+Study where the data originated: Crowder and Hand (1990).
+
+
+```{r}
+#Read in the prepared data
+RATSl <- read.csv("C:/Users/Localadmin_neimane/Desktop/Data Science/OpenDataScience/IODS-project/data/RATSl.txt", sep= ",")
+
+##Set categorical variables as factors
+RATSl$ID <- factor(RATSl$ID)
+RATSl$Group <- factor(RATSl$Group)
+RATSl$Time <- as.numeric(RATSl$Time)
+
+#Look at data structure
+str(RATSl)
+```
+
+
+### Graphical Display
+
+Here you can see each individual rats weight change over the study period. The line is colored according to the diet group. We can see that rats in group 1 weigh much less and gained less weight over the study. One rat in group 2 is much heavier than the other rats in its group. It seems that all rats gain weight over the study period. 
+
+```{r}
+ggplot(RATSl, aes(x = Time, y =value, group = ID)) +
+  geom_line(aes(color = Group)) +
+  scale_x_continuous(name = "Time (days)", breaks = seq(0, 60, 10)) +
+  scale_y_continuous(name = "Weight (grams)") +
+  theme(legend.position = "top")+
+  theme_bw()+
+  scale_colour_brewer(palette = "Dark2")
+```
+
+
+Now lets look at the mean response profile. Here I calculated the mean value from all individuals in the group at each time point and plotted it.
+
+```{r}
+# Number of Times
+n <- RATSl$Time %>% unique() %>% length()
+
+#Calculate the mean and standard error for each group at all time points
+RATSls <- RATSl %>%
+  group_by(Group, Time) %>%
+  summarise(mean = mean(value), se = sd(value)/sqrt(n) ) %>%
+  ungroup()
+
+# Plot the mean profiles
+ggplot(RATSls, aes(x = Time, y = mean, linetype = Group, shape = Group, color = Group)) +
+  geom_line() +
+  scale_linetype_manual(values = c(1,2,3)) +
+  geom_point(size=3) +
+  scale_shape_manual(values = c(1,2,5)) +
+  geom_errorbar(aes(ymin = mean - se, ymax = mean + se, linetype="1"), width=0.3) +
+  theme(legend.position = c(0.9,0.5)) +
+  scale_y_continuous(name = "mean(weight) +/- se(weight)")+
+  theme_bw()+
+  scale_colour_brewer(palette = "Dark2")
+```
+
+
+Visually it seems that diet 1 is the least nutritional of fattening (as I don't know what would be the optimal weight). On average the group 3 was the heaviest at the end of the study. As there are already very big differences between groups on Time 1 I would suspect that either the rats did not randomly receive the diet treatment or were already some time under the treatment. 
+
+### Statistical test
+
+Before we continue let's check the data.
+
+Starting with checking outliers with boxplots.
+
+```{r}
+ggplot(RATSls, aes(x = Group, y = mean)) +
+  geom_boxplot() +
+  theme_bw()+
+  stat_summary(fun.y = "mean", geom = "point", shape=23, size=4, fill = "white") +
+  scale_y_continuous(name = "mean weight")
+```
+
+
+No outliers in the mean values. 
+
+Check normality:
+
+```{r}
+ggqqplot(RATSls, "mean", ggtheme = theme_bw()) +
+  facet_grid(~ Group, labeller = "label_both")
+```
+
+Point fall on the line very well. 
+
+
+We saw visually a difference between groups and weight. Now let's perform a test on the linear model to check the result.
+
+```{r}
+model<- aov(mean ~ Group, data = RATSls)
+
+# Compute the analysis of variance table for the fitted model with anova()
+anova(model)
+```
+The test confirms significant difference across the nutritional diet groups. Now let's have a look at the diagnostic plots of the model to check the validity the results. 
+
+```{r}
+par(mfrow = c(2, 2))
+plot(model)
+```
+
+
+Residuals vs fitted generated a horizontal line indicates a good linear relationship. In normal Q-Q plot point follow the line, maybe a slight overdispersion on the right side. Still I consider this to be fine and assume residual normal distribution. Scale-Location plot is not ideal, but it has to be taken into consideration that the dataset is small. Residual vs Levarage show no influential plots, Cook's distance is not even shown on the graph. 
+As it seems that we can trust the model results, let's perform pair-wise comparison to see if the model indicates significant differences across the groups.
+
+```{r}
+TukeyHSD(model)
+```
+
+Pair-wise comparison informs us that there is a significant difference across the 3 study group mean weights. Rats with the 3 nutritional diet weigh the most, while rats with 1 diet are the lightest. 
+
+Summary - mean value - approach is limited since we only look at the group mean values. Next we will look at more complex method to analyse longitudinal data. 
+
+
+
+## Linear Mixed Effects Model Approach
+
+
+### Overview of data source
+
+The data set used to explore longitudinal data analysis with Linear Mixed Effect Model Approach consists of brief psychiatric rating scale (BPRS) results (**value**) of 40 men (**subject**) that received treatment 1 or treatment 2 (**treatment**) over the study period of 8 weeks (**week**). BPRS is used to evaluate person of having schizophrenia disorder and the question evaluate symptoms as hostility, mistrust and others. The more points, the more severe the symptoms.  
+
+The original data set can be found here: https://raw.githubusercontent.com/KimmoVehkalahti/MABS/master/Examples/data/BPRS.txt
+Origin of data is Davis (2002) study.
+
+
+```{r}
+#Read in the prepared data
+BPRSl <- read.csv("C:/Users/Localadmin_neimane/Desktop/Data Science/OpenDataScience/IODS-project/data/BPRSl.txt", sep="\t")
+
+##Set categorical variables as factors
+BPRSl$treatment <- factor(BPRSl$treatment)
+BPRSl$subject <- factor(BPRSl$subject)
+BPRSl$week <- as.numeric(BPRSl$week)
+BPRSl$value <- as.numeric(BPRSl$value)
+#Look at data structure
+str(BPRSl)
+```
+
+Now let's continue exploring the data by plotting the results of the study. 
+
+### Graphical Display
+
+```{r}
+ggplot(BPRSl, aes(x = week, y = value, fill=treatment)) +
+  geom_boxplot()+
+  theme_bw()+
+  scale_fill_brewer(palette = "Dark2")
+```
+
+In the first graph we can see boxplots where data from all the participants from each treatment is included. We can see that the BPRS test result (**value**) decreases over the study period for both treatments. We can also see that there are few outliers at several time points.
+
+Let's continue exploring the data by plotting each participant changes in BPRS test results over time separately. 
+
+```{r}
+#Plot the data
+TrueValues <- ggplot(BPRSl, aes(x = week, y = value, linetype = subject, color=subject)) +
+  geom_line() +
+  scale_linetype_manual(values = rep(1:10, times=4)) +
+  facet_grid(. ~ treatment, labeller = label_both)+
+  theme_bw() + theme(legend.position = "none")+
+   scale_y_continuous(name = "BPRS test score", limits = c(10, 100), breaks = seq(25, 100, by = 25))
+plot(TrueValues)
+```
+
+It seems that all of the participants experienced less symptoms after the study treatments. But as this is a busy graph and each individual had a different starting point (severeness of the symptoms). 
+Let's check the baseline BPRS score values for participants from both treatments. 
+
+```{r}
+#Read in the original data
+BPRS <- read.table("https://raw.githubusercontent.com/KimmoVehkalahti/MABS/master/Examples/data/BPRS.txt", sep  =" ", header = T)
+
+#Rename week0
+names(BPRS)[3]<-"baseline"
+
+#Set treatment as factor
+BPRS$treatment<-as.factor(BPRS$treatment)
+
+#Plot the baseline value of the test
+ggplot(BPRS, aes(x = treatment, y = baseline)) +
+  geom_boxplot()+
+  theme_bw()+
+  stat_summary(fun.y=mean,shape=1,col='red',geom='point')
+
+#Save data to use for linear modelling
+BPRSAn <- BPRS
+BPRSAn$subject <- as.factor(BPRSAn$subject)
+BPRSAn <- pivot_longer(BPRSAn, week1:week8) #Make long table
+BPRSAn$week <- sub("week","",BPRSAn$name) #Remove name week from the name
+BPRSAn <- BPRSAn[ -c(4) ]  #Remove column
+BPRSAn$week<-as.numeric(BPRSAn$week)
+```
+
+
+
+The mean value of the BPRS score for participants from both treatments is similar, but the distribution is not. More participants in treatment 2 had higher BPRS value before the study than in treatment group 1. 
+
+Next I will calculate the difference from the baseline points (week0 - before starting the treatment result in the BPRS test) over the study period for each participant separately. 
+
+
+```{r}
+#Calculate difference between the test result at some point in the study and the result before the study
+BPRS$week1 <- BPRS$week1-BPRS$baseline
+BPRS$week2 <- BPRS$week2-BPRS$baseline
+BPRS$week3 <- BPRS$week3-BPRS$baseline
+BPRS$week4 <- BPRS$week4-BPRS$baseline
+BPRS$week5 <- BPRS$week5-BPRS$baseline
+BPRS$week6 <- BPRS$week6-BPRS$baseline
+BPRS$week7 <- BPRS$week7-BPRS$baseline
+BPRS$week8 <- BPRS$week8-BPRS$baseline
+
+#Make long table
+BPRS2l <- pivot_longer(BPRS, week1:week8)
+BPRS2l$week <- sub("week","",BPRS2l$name)
+BPRS2l$week<-as.numeric(BPRS2l$week)
+BPRS2l$treatment<-as.factor(BPRS2l$treatment)
+BPRS2l$subject<-as.factor(BPRS2l$subject)
+
+#Plot the new data where the baseline test result is accounted for
+ggplot(BPRS2l, aes(x = week, y = value, linetype = subject, color=subject)) +
+  geom_line() +
+  scale_linetype_manual(values = rep(1:10, times=4)) +
+  facet_grid(. ~ treatment, labeller = label_both) +
+  theme_bw() + theme(legend.position = "none")+
+  geom_hline(yintercept=0, color = "black", size=0.7, linetype="dashed")
+```
+
+This graph is easier to interpret since it takes into account that at the start of the study the participants had different severity of schizophrenia symptoms. If the line representing participant is below the dotted line it means that the participant had lower symptom severity than before the treatment. The line is above the baseline for two of the participants in treatment 1 and 3 participants under treatment 2. 
+
+Let's first start by creating a random intercept model including and exluding baseline test value.
+
+```{r}
+model1 <- lmer(value ~ treatment + week + (1 | subject), data = BPRSAn)
+
+# Print the summary of the model
+summary(model1)
+
+model1Base <- lmer(value ~ treatment + baseline + week + (1 | subject), data = BPRSAn)
+summary(model1Base)
+
+
+anova(model1, model1Base)
+
+```
+
+Inclusion of the baseline test value improves the model. Now let's make a random intercept and random slope model.
+
+```{r}
+model2 <- lmer(value ~ treatment + baseline + (week | subject), data = BPRSAn)
+
+# Print the summary of the model
+summary(model2)
+
+```
+
+Continue by considering interaction in the model of Group and Time.
+
+```{r}
+model3 <- lmer(value ~ treatment * week + baseline + (week | subject), data = BPRSAn)
+
+anova(model1, model1Base, model2, model3)
+```
+
+Model3 has the lowest AIC, BIC score, deviance and higher logLik. Thus I will continue examine model3.  
+
+```{r}
+summary(model3)
+```
+
+We can see that there is substantial effect of the individual subject to the BPRS test score (47%). Still the large residual variance indicates that there is large within group variance. Fixed effect part model part shows that with longer time under the treatment (week) the severity of schizophrenia symptoms decreases if evaluated with the BPRS test. Also, larger baseline test value results in higher test score trough the study. Categorical predictor class *treatment* has a coefficient of -5.96 meaning that the test score of participants in treatment2 is 5.96 lower than the mean of participant test scores in treatment 1 group. The given correlation coefficients indicate that this model could have problem with multicollinearity, in this case the model is valid for predictions, but regression coefficients may be faulty and it can be difficult to correctly separate the effect of the regressiors on the result. 
+
+
+Let's see visually how the model3 fitted values resemble the original observed values.
+
+```{r}
+Fitted <- fitted(model3)
+
+# Create a new column fitted to RATSL
+BPRSAn <- BPRSAn %>%
+  mutate(Fitted)
+
+# draw the plot of RATSL
+Modelled <- ggplot(BPRSAn, aes(x = week, y = Fitted, group = subject)) +
+  geom_line(aes(linetype=subject, color=subject)) +
+  scale_x_continuous(name = "weeks", breaks = seq(1, 8, 1)) +
+  scale_y_continuous(name = "BPRS test score", limits = c(10, 100), breaks = seq(25, 100, by = 25))+
+  facet_grid(. ~ treatment, labeller = label_both)+
+  theme_bw()+theme(legend.position = "none")
+
+
+#Model predictions and original value plots 
+plot_grid(TrueValues + theme(legend.position = "none") + labs(subtitle = "Values obtained in the study"), 
+          Modelled + labs(subtitle = "Model fitted values"),
+          labels = NULL)
+
+```
+
+In the graph on the left you can see the true observed BPRS test score values, while on the right one can see the model3 fitted values. Just as in the original data the spread of predicted values is bigger for treatment 2 values. We can see that model predicted values for treatment 1 in the beginning in the study is under evaluated for some of the individuals. Still it seems that model captured the value spread differences across the two study treatments. 
+
+
+
+
+
+### Assumptions
+
+Let's see if the model chosen is valid. 
+
+```{r}
+#Linearity
+plot(resid(model3),BPRSAn$value)
+
+```
+
+It is hard to tell if the graph of observed and residual value is truly random. 
+
+
+```{r}
+#Homogeneity of Variance
+plot(model3)
+```
+
+Model seems to have even spread around the central line. 
+
+```{r}
+#Normal distribution of the residuals
+qqmath(model3, id=0.05)
+```
+
+Most of the points seem fine, there are some deviations on the tails. Maybe points 4, 11 and 1 could be excluded.
+Let's see if one of most common transformation -log- will improve the relative normality of the data.
+
+```{r}
+# Log tranformation of the response variable
+BPRSAn$valueLog <- log10(BPRSAn$value)
+model3log <- lmer(valueLog ~ treatment * week + baseline + (week | subject), data = BPRSAn)
+
+#Check how the log transformed model fits to normality assumptions
+plot(resid(model3log),BPRSAn$valueLog)
+plot(model3log)
+qqmath(model3log, id=0.05)
+  
+```
+
+Log transformation slightly improves data fit to normality, but I think that the original model3 does not violate the normality assumptions too much so we can stick with the results from it. If we were to base our result on the model with log transformation data interpretation would not be so straight forward.
